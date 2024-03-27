@@ -8,7 +8,7 @@ ALL_OBJF := $(patsubst $(SRCD)/%,$(BLDD)/%,$(ALL_SRCF:.cpp=.o))
 
 INC := -I $(INCD)
 
-CFLAGS := -Wall -Werror -Wno-unused-variable -Wno-unused-function -MMD -O3
+CFLAGS := -Wall -Werror -Wno-unused-variable -Wno-unused-function -MMD -O3 -std=c++11
 COLORF := -DCOLOR
 DFLAGS := -g -DDEBUG -DCOLOR -Og
 PRINT_STAMENTS := -DERROR -DSUCCESS -DWARN -DINFO
