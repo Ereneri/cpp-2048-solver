@@ -146,12 +146,12 @@ int main(int argc, char** argv) {
         std::cout << std::endl;
     }
     else {
-        std::cout << (successes > 0 ? "Game won!" : "Game lost.") << std::endl;
-        std::cout << "Final score: " << scores[0] << std::endl;
-        std::cout << "Highest tile: " << highest_tiles[0] << std::endl;
-        std::cout << "Number of Moves: " << moves[0] << std::endl;
+        std::cout << (successes > 0 ? "W" : "L") << ", ";
+        std::cout << scores[0] << ", ";
+        std::cout << highest_tiles[0] << ", ";
+        std::cout << moves[0] << ", ";
     }
-    std::cout << "Time elapsed: " << time_span.count() << " seconds" << std::endl;
+    std::cout << time_span.count() << std::endl;
 
     return 0;
 }

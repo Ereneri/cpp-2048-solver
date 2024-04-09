@@ -50,7 +50,7 @@ std::pair<int, int> simulateOneRun(Game game) {
  */
 std::tuple<int, int, int> monteCarloSimulateGame(int runs, int display_level, Game game) {
     int moves = 0;
-    std::cout << "Attempting to solve a new game with Monte Carlo... " << std::flush;
+    // std::cout << "Attempting to solve a new game with Monte Carlo... " << std::flush;
     while (game.canContinue()) {
         if (display_level >= 2) {
             std::cout << std::endl << game;
@@ -95,7 +95,7 @@ std::tuple<int, int, int> monteCarloSimulateGame(int runs, int display_level, Ga
 
     }
     if (display_level <= 1) {
-        std::cout << "Done!" << (display_level == 0 ? "\n" : "");
+        // std::cout << "Done!" << (display_level == 0 ? "\n" : "");
     }
     if (display_level >= 1) {
         std::cout << std::endl << game << std::endl;

@@ -73,7 +73,7 @@ float expectimaxScore(int depth, Game game, bool is_max) {
 
 std::tuple<int, int, int> expectimaxSearch(int depth, int display_level, Game game) {
     int moves = 0;
-    std::cout << "Attempting to solve a new game with Expectimax... " << std::flush;
+    // std::cout << "Attempting to solve a new game with Expectimax... " << std::flush;
     while (game.canContinue()) {
         if (display_level >= 2) {
             std::cout << std::endl << game;
@@ -129,7 +129,7 @@ std::tuple<int, int, int> expectimaxSearch(int depth, int display_level, Game ga
         }
     }
     if (display_level <= 1) {
-        std::cout << "Done!" << (display_level == 0 ? "\n" : "");
+        // std::cout << "Done!" << (display_level == 0 ? "\n" : "");
     }
     if (display_level >= 1) {
         std::cout << std::endl << game << std::endl;
