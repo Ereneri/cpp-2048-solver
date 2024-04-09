@@ -112,18 +112,20 @@ int main(int argc, char** argv) {
 
     // Set up variables for statistics
     int successes = 0;
+    std::vector<int> moves;
     std::vector<int> scores;
     std::vector<int> highest_tiles;
     high_resolution_clock::time_point t1 = high_resolution_clock::now();
     switch (alg_key) {          // Run chosen algorithm
         case MONTECARLO:
-            successes = monteCarloSolve(num_games, num_runs, print_level, scores, highest_tiles);
+            successes = monteCarloSolve(num_games, num_runs, print_level, scores, highest_tiles, moves);
             break;
         case MINIMAX:
-            successes = minimaxSolve(num_games, depth, print_level, scores, highest_tiles);
+            successes = minimaxSolve(num_games, depth, print_level, scores, highest_tiles, moves);
             break;
         case EXPECTIMAX:
-            successes = expectimaxSolve(num_games, depth, print_level, &scores, &highest_tiles);
+            // why the fuck does this use an address instead of passing the vector in???
+            successes = expectimaxSolve(num_games, depth, print_level, scores, highest_tiles, moves);
     }
     high_resolution_clock::time_point t2 = high_resolution_clock::now();
     duration<double> time_span = duration_cast<duration<double>>(t2 - t1);
@@ -138,11 +140,17 @@ int main(int argc, char** argv) {
             std::cout << highest_tiles[i] << ", ";
         }
         std::cout << std::endl;
+        std::cout << "Number of Moves: ";
+        for (int i = 0; i < (int) moves.size(); ++i) {
+            std::cout << moves[i] << ", ";
+        }
+        std::cout << std::endl;
     }
     else {
         std::cout << (successes > 0 ? "Game won!" : "Game lost.") << std::endl;
         std::cout << "Final score: " << scores[0] << std::endl;
         std::cout << "Highest tile: " << highest_tiles[0] << std::endl;
+        std::cout << "Number of Moves: " << moves[0] << std::endl;
     }
     std::cout << "Time elapsed: " << time_span.count() << " seconds" << std::endl;
 

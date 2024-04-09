@@ -1,4 +1,5 @@
 #include "Expectimax.hpp"
+#include<tuple>
 
 float expectimaxScore(int depth, Game game, bool is_max) {
     std::map<int, weightedmoves> possibilities = game.computePossibilities();    
@@ -70,7 +71,8 @@ float expectimaxScore(int depth, Game game, bool is_max) {
     }
 }
 
-std::pair<int, int> expectimaxSearch(int depth, int display_level, Game game) {
+std::tuple<int, int, int> expectimaxSearch(int depth, int display_level, Game game) {
+    int moves = 0;
     std::cout << "Attempting to solve a new game with Expectimax... " << std::flush;
     while (game.canContinue()) {
         if (display_level >= 2) {
@@ -121,6 +123,10 @@ std::pair<int, int> expectimaxSearch(int depth, int display_level, Game game) {
             case RIGHT:
                 game.right(false);
         }
+        moves++;
+        if (display_level >= 2) {
+            std::cout << "Move " << moves << ": " << max_choice << std::endl;
+        }
     }
     if (display_level <= 1) {
         std::cout << "Done!" << (display_level == 0 ? "\n" : "");
@@ -128,7 +134,7 @@ std::pair<int, int> expectimaxSearch(int depth, int display_level, Game game) {
     if (display_level >= 1) {
         std::cout << std::endl << game << std::endl;
     }
-    return std::pair<int, int>(game.getHighestTile(), game.score);
+    return std::tuple<int, int, int>(game.getHighestTile(), game.score, moves);
 }
 
 /**
@@ -136,16 +142,17 @@ std::pair<int, int> expectimaxSearch(int depth, int display_level, Game game) {
  * Tabulates data from game each in order to display results at completion.
  */
 int expectimaxSolve(int n, int depth, int display_level, 
-    std::vector<int> *scores, std::vector<int> *highest_tiles) {
+    std::vector<int> scores, std::vector<int> highest_tiles, std::vector<int> moves) {
 
     int successes = 0;
     for (int i = 0; i < n; ++i) {
-        std::pair<int, int> result = expectimaxSearch(depth, display_level, Game());
-        if (result.first >= WIN) {
+        std::tuple<int, int, int> result = expectimaxSearch(depth, display_level, Game());
+        if (std::get<0>(result) >= WIN) {
             successes++;
         }
-        (*highest_tiles).push_back(result.first);
-        (*scores).push_back(result.second);
+        highest_tiles.push_back(std::get<0>(result));
+        scores.push_back(std::get<1>(result));
+        moves.push_back(std::get<2>(result));
     }
     return successes;
 }

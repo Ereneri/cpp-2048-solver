@@ -7,8 +7,8 @@
 // using namespace std::chrono;
 
 std::pair<int, int> simulateOneRun(Game game);
-std::pair<int, int> monteCarloSimulateGame(int runs, int display_level, Game game);
+std::tuple<int, int, int> monteCarloSimulateGame(int runs, int display_level, Game game);
 int monteCarloSolve(int n, int runs, int display_level, 
-    std::vector<int> &scores, std::vector<int> &highest_tiles);
+    std::vector<int> &scores, std::vector<int> &highest_tiles, std::vector<int> &moves);
 
 #endif

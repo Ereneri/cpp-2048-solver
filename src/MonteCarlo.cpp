@@ -48,7 +48,8 @@ std::pair<int, int> simulateOneRun(Game game) {
  * executes that move. Continues this process until game completion.
  * @return (int HIGHEST_TILE, int FINAL_SCORE)
  */
-std::pair<int, int> monteCarloSimulateGame(int runs, int display_level, Game game) {
+std::tuple<int, int, int> monteCarloSimulateGame(int runs, int display_level, Game game) {
+    int moves = 0;
     std::cout << "Attempting to solve a new game with Monte Carlo... " << std::flush;
     while (game.canContinue()) {
         if (display_level >= 2) {
@@ -87,6 +88,11 @@ std::pair<int, int> monteCarloSimulateGame(int runs, int display_level, Game gam
                 game.right(false);
                 break;
         }
+        moves++;
+        if (display_level >= 2) {
+            std::cout << "Move " << moves << ": " << best_move << std::endl;
+        }
+
     }
     if (display_level <= 1) {
         std::cout << "Done!" << (display_level == 0 ? "\n" : "");
@@ -94,7 +100,7 @@ std::pair<int, int> monteCarloSimulateGame(int runs, int display_level, Game gam
     if (display_level >= 1) {
         std::cout << std::endl << game << std::endl;
     }
-    std::pair<int, int> ret(game.getHighestTile(), game.score);
+    std::tuple<int, int, int> ret(game.getHighestTile(), game.score, moves);
     return ret;
 }
 
@@ -103,16 +109,17 @@ std::pair<int, int> monteCarloSimulateGame(int runs, int display_level, Game gam
  * Tabulates data from each game in order to display results at completion.
  */
 int monteCarloSolve(int n, int runs, int display_level,
-    std::vector<int> &scores, std::vector<int> &highest_tiles) {
+    std::vector<int> &scores, std::vector<int> &highest_tiles, std::vector<int> &moves) {
 
     int successes = 0;
     for (int i = 0; i < n; ++i) {
-        std::pair<int, int> result = monteCarloSimulateGame(runs, display_level, Game());
-        if (result.first >= WIN) {
+        std::tuple<int, int, int> result = monteCarloSimulateGame(runs, display_level, Game());
+        if (std::get<0>(result) >= WIN) {
             successes++;
         }
-        highest_tiles.push_back(result.first);
-        scores.push_back(result.second);
+        highest_tiles.push_back(std::get<0>(result));
+        scores.push_back(std::get<1>(result));
+        moves.push_back(std::get<2>(result));
     }
     return successes;
 }
