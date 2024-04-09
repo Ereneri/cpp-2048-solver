@@ -124,7 +124,6 @@ int main(int argc, char** argv) {
             successes = minimaxSolve(num_games, depth, print_level, scores, highest_tiles, moves);
             break;
         case EXPECTIMAX:
-            // why the fuck does this use an address instead of passing the vector in???
             successes = expectimaxSolve(num_games, depth, print_level, scores, highest_tiles, moves);
     }
     high_resolution_clock::time_point t2 = high_resolution_clock::now();
