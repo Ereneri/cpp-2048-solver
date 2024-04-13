@@ -1,16 +1,3 @@
-/* Testing and data collection
-  Objective: using processes, we are going to run "AISolver", with all three algorithms, passed in as argsments. We will run the program 100 times, and collect the data.
-  AISolver returns the data back via STDOUT, we will pipe this information back into a file for each algorithm.
-  The 3 output files with be csvs with the following columns:
-  - Attempt Number
-  - Win/Loss
-  - Final Score
-  - Highest tile
-  - Time elapsed
-  - Number of moves
-
-  example process to run: AISolver -a minimax -n 1 -d 1 -p 3
-*/
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -32,16 +19,27 @@ pid_t *pids;
 #define MINIMAX 1
 #define EXPECTIMINIMAX 2
 
+// Function to handle termination signal
+void terminationHandler(int signum) {
+  // run "pkill -9 -f AISolver" to kill all AISolver processes
+  system("pkill -9 -f AISolver");
+  fprintf(stderr, "Terminating program\n");
+
+  // Terminate the program
+  exit(signum);
+}
+
 int main(int argc, char *argv[]) {
   // check number of inputs
-  if (argc != 4) {
-    printf("Usage: %s <number of runs> <minimax/expectminimax depth> <monte carlo num of sims>\n", argv[0]);
+  if (argc != 5) {
+    printf("Usage: %s <number of runs> <batch_size> <minimax/expectminimax depth> <monte carlo num of sims>\n", argv[0]);
     exit(1);
   }
   // Define the number of times to run the program
   int numRuns = atoi(argv[1]);
-  char* minimaxDepth = argv[2];
-  char* monteCarloSims = argv[3];
+  int batch_size = atoi(argv[2]);
+  char* minimaxDepth = argv[3];
+  char* monteCarloSims = argv[4];
 
   // Define the output file names
   char *outputFiles[] = {"output/montecarlo.csv", "output/minimax.csv", "output/expectiminimax.csv"};
@@ -54,6 +52,9 @@ int main(int argc, char *argv[]) {
 
   // track how many processes for each algorithm is complete
   int processCount[] = {numRuns, numRuns, numRuns};
+
+  // Register the termination handler
+  signal(SIGINT, terminationHandler);
 
   // Loop through each algorithm
   for (int i = 0; i < 3; i++) {
@@ -68,46 +69,49 @@ int main(int argc, char *argv[]) {
     printf("Win/Loss, Final Score, Highest Tile, Number of Moves, Time Elapsed\n");
     fflush(stdout);
 
-    // Loop through each run
-    for (int j = 0; j < numRuns; j++) {
-      // Create a child process
-      pid_t pid = fork();
-      
-      if (pid == -1) {
-        perror("Error creating child process");
-        exit(1);
-      } else if (pid == 0) {
-        fprintf(stderr, "ENTER: (%d) process for %s\n", getpid(), algorithms[i]);
-        // Child process
-        if (i == MONTECARLO) {
-          // Execute the AISolver program with the current algorithm and arguments
-          execl("./AISolver", "AISolver", "-a", algorithms[i], "-n", "1", "-r", monteCarloSims, "-p", "0", NULL);
+    for (int run = 0; run < numRuns; run+=batch_size) {
+      fprintf(stderr, "Starting batch %d for %s\n", run%batch_size, algorithms[i]);
+      // Loop through each run
+      for (int j = 0; j < batch_size; j++) {
+        // Create a child process
+        pid_t pid = fork();
+        
+        if (pid == -1) {
+          perror("Error creating child process");
+          exit(1);
+        } else if (pid == 0) {
+          fprintf(stderr, "ENTER: (%d) process for %s\n", getpid(), algorithms[i]);
+          // Child process
+          if (i == MONTECARLO) {
+            // Execute the AISolver program with the current algorithm and arguments
+            execl("./AISolver", "AISolver", "-a", algorithms[i], "-n", "1", "-r", monteCarloSims, "-p", "0", NULL);
+          } else {
+            // Execute the AISolver program with the current algorithm and arguments
+            execl("./AISolver", "AISolver", "-a", algorithms[i], "-n", "1", "-d", minimaxDepth, "-p", "0", NULL);
+          }
+
+          // If execl returns, there was an error
+          perror("Error executing AISolver");
+          exit(1);
         } else {
-          // Execute the AISolver program with the current algorithm and arguments
-          execl("./AISolver", "AISolver", "-a", algorithms[i], "-n", "1", "-d", minimaxDepth, "-p", "0", NULL);
+          // Parent process
+          pids[j] = pid;
         }
-
-        // If execl returns, there was an error
-        perror("Error executing AISolver");
-        exit(1);
-      } else {
-        // Parent process
-        pids[j] = pid;
       }
-    }
-    // fprintf(stderr, "Waiting for all child processes to finish for %s\n", algorithms[i])
 
-    // Wait for all child processes to finish
-    for (int j = 0; j < numRuns; j++) {
-      int status;
-      pid_t exitedPid = waitpid(pids[j], &status, 0);
-      if (exitedPid > 0) {
-        processCount[i]--;
-        fprintf(stderr, "EXIT:  (%d) %d left to complete for %s\n", exitedPid, processCount[i], algorithms[i]);
-      } else {
-        perror("Error waiting for child process");
+      // Wait for all child processes to finish
+      for (int j = 0; j < batch_size; j++) {
+        int status;
+        pid_t exitedPid = waitpid(pids[j], &status, 0);
+        if (exitedPid > 0) {
+          processCount[i]--;
+          fprintf(stderr, "EXIT:  (%d) %d left to complete for %s\n", exitedPid, processCount[i], algorithms[i]);
+        } else {
+          perror("Error waiting for child process");
+        }
       }
-    }
+    } 
+
 
     // Close the output file
     fclose(outputFile);
