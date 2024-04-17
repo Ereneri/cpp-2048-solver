@@ -14,6 +14,8 @@
 
 // Batch size is determined at runtime now
 pid_t *pids;
+pid_t *currentbatchpids;
+int batch_size;
 
 #define MONTECARLO 0
 #define MINIMAX 1
@@ -29,6 +31,16 @@ void terminationHandler(int signum) {
   exit(signum);
 }
 
+// Function to handle alarm signal
+void alarmHandler(int signum) {
+  fprintf(stderr, "Process took too long. Killing...\n");
+  for (int i = 0; i < batch_size; i++) {
+    if (currentbatchpids[i] != -1) {
+      kill(currentbatchpids[i], SIGKILL);
+    }
+  }
+}
+
 int main(int argc, char *argv[]) {
   // check number of inputs
   if (argc != 5) {
@@ -37,7 +49,7 @@ int main(int argc, char *argv[]) {
   }
   // Define the number of times to run the program
   int numRuns = atoi(argv[1]);
-  int batch_size = atoi(argv[2]);
+  batch_size = atoi(argv[2]);
   char* minimaxDepth = argv[3];
   char* monteCarloSims = argv[4];
 
@@ -49,6 +61,7 @@ int main(int argc, char *argv[]) {
 
   // Create an array to store the child process IDs
   pids = malloc(sizeof(pid_t) * numRuns);
+  currentbatchpids = malloc(sizeof(pid_t) * batch_size);
 
   // track how many processes for each algorithm is complete
   int processCount[] = {numRuns, numRuns, numRuns};
@@ -75,6 +88,8 @@ int main(int argc, char *argv[]) {
       for (int j = 0; j < batch_size; j++) {
         // Create a child process
         pid_t pid = fork();
+        // add the pid to the current batch
+        currentbatchpids[j] = pid;
         
         if (pid == -1) {
           perror("Error creating child process");
@@ -96,6 +111,10 @@ int main(int argc, char *argv[]) {
         } else {
           // Parent process
           pids[j] = pid;
+          // Set an alarm for 600 seconds
+          alarm(360);
+          // Register the alarm handler
+          signal(SIGALRM, alarmHandler);
         }
       }
 
@@ -104,6 +123,9 @@ int main(int argc, char *argv[]) {
         int status;
         pid_t exitedPid = waitpid(pids[j], &status, 0);
         if (exitedPid > 0) {
+          // remove it from the current batch pids
+          currentbatchpids[j] = -1; // -1 means it is not a valid pid thus done
+          // Decrement the process count
           processCount[i]--;
           fprintf(stderr, "EXIT:  (%d) %d left to complete for %s\n", exitedPid, processCount[i], algorithms[i]);
         } else {

@@ -2,73 +2,48 @@
 #include<tuple>
 
 float expectimaxScore(int depth, Game game, bool is_max) {
-    std::map<int, weightedmoves> possibilities = game.computePossibilities();    
-    if (possibilities.size() == 0) {
-        return 0.0;
-    }
-    else if (is_max) {
-        if (depth == 0) {
-            return Heuristics::get_h_score(game.state);
+    float score = 0.0;
+    for (int stage = 0; stage < depth; ++stage) {
+        movelist possible_moves;
+        game.generatePossibleMoves(possible_moves);
+        if (possible_moves.size() == 0) {
+            return 0.0;
         }
-        else {
-            std::map<int, float> scores;
-            for (auto const& entry : possibilities) {
-                int move = entry.first;                             // Direction of move
-                weightedmoves weighted_subset = entry.second;       // Vector of (prob, game)
-                int len = (int) weighted_subset.size();
-                if (len > 0) {
-                    scores[move] = 0.0;
-                    for (int j = 0; j < len; ++j) {
-                        scores[move] += Heuristics::get_h_score(weighted_subset[j].second.state) * weighted_subset[j].first;
+        
+        const Game *best_game = NULL;
+        float best_score = -std::numeric_limits<float>::max();
+        for (auto const& move : possible_moves) {
+            float copy_h_score = Heuristics::get_h_score(move.second.state);
+            if (copy_h_score > best_score) {
+                best_game = &(move.second);
+                best_score = copy_h_score;
+            }
+        }
+
+        // average of the worst scores
+        float worst_score = std::numeric_limits<float>::max();
+        float sum_worst_scores = 0.0;
+        for (int i = 0; i < DIM; ++i) {
+            for (int j = 0; j < DIM; ++j) {
+                if (best_game->state[i][j] == 0) {
+                    board state_copy = best_game->state;
+                    state_copy[i][j] = 2;
+                    float copy_h_score = Heuristics::get_h_score(state_copy);
+                    if (copy_h_score < worst_score) {
+                    worst_score = copy_h_score;
                     }
+                    state_copy[i][j] = 4;
+                    copy_h_score = Heuristics::get_h_score(state_copy);
+                    if (copy_h_score < worst_score) {
+                    worst_score = copy_h_score;
+                    }
+                    sum_worst_scores += worst_score;
                 }
             }
-
-            float max_score = -std::numeric_limits<float>::max();
-            int max_choice = UP;
-            for (auto const& score : scores) {      // Determine best move choice based on tabulated scores
-                if (score.second > max_score) {
-                    max_score = score.second;
-                    max_choice = score.first;
-                }
-            }
-
-            switch (max_choice) {
-                case UP:
-                    game.up(false);
-                    break;
-                case DOWN:
-                    game.down(false);
-                    break;
-                case LEFT: 
-                    game.left(false);
-                    break;
-                case RIGHT:
-                    game.right(false);
-            }
-
-            return expectimaxScore(depth - 1, game, false);
         }
+        score = sum_worst_scores / (float) 4;
     }
-    else {
-        std::map<int, float> scores;
-        for (auto const& entry : possibilities) {
-            int move = entry.first;                             // Direction of move
-            weightedmoves weighted_subset = entry.second;       // Vector of (prob, game)
-            int len = (int) weighted_subset.size();
-            if (len > 0) {
-                scores[move] = 0.0;
-                for (int j = 0; j < len; ++j) {
-                    scores[move] += expectimaxScore(depth, weighted_subset[j].second, true) * weighted_subset[j].first;
-                }
-            }
-        }
-        float sum = 0.0;
-        for (auto const& score : scores) {
-            sum += score.second;
-        }
-        return sum / scores.size();
-    }
+    return score;
 }
 
 std::tuple<int, int, int> expectimaxSearch(int depth, int display_level, Game game) {
