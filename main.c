@@ -111,8 +111,8 @@ int main(int argc, char *argv[]) {
         } else {
           // Parent process
           pids[j] = pid;
-          // Set an alarm for 600 seconds
-          alarm(360);
+          // Set an alarm for 400 seconds (7 mins)
+          alarm(400);
           // Register the alarm handler
           signal(SIGALRM, alarmHandler);
         }
